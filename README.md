@@ -12,11 +12,15 @@ I then wanted a sort of simple "toggle switch" that can be used to quickly failo
 
 There's a couple of things I wanted to determine in this scenario:
 
-1 - Determine the "quality" of WAN connection first if failover makes sense (excessive packet loss over last 5 minutes)
-2 - Change default gateway to LTE instead of WAN
-3 - Reset whole-house VPN connection (ProtonVPN)
-4 - Reset states table to re-establish connectivity
-5 - Enable certain firewall rules to reduce traffic via LTE to conserve bandwidth and costs (LTE is expensive!)
+1. Determine the "quality" of WAN connection first if failover makes sense (excessive packet loss over last 5 minutes)
+
+2. Change default gateway to LTE instead of WAN
+
+3. Reset whole-house VPN connection (ProtonVPN)
+
+4. Reset states table to re-establish connectivity
+
+5. Enable certain firewall rules to reduce traffic via LTE to conserve bandwidth and costs (LTE is expensive!)
 
 ... and vise-versa in case WAN comes back up, I want a simple "manual transfer switch" that can do all this work.
 
