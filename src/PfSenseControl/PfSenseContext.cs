@@ -122,6 +122,27 @@ namespace PfSenseControl
         }
 
         /// <summary>
+        /// Creates a new HttpRequestMessage containing required headers
+        /// </summary>
+        /// <param name="httpMethod"></param>
+        /// <param name="relativePath">Relative path, such as "system_gateways.php"</param>
+        /// <returns></returns>
+        internal HttpRequestMessage CreateHttpRequestMessage(HttpMethod httpMethod, string relativePath)
+        {
+            var msg = new HttpRequestMessage(httpMethod, $"{rootUrl}{relativePath}");
+            setSessionHeaders(msg.Headers);
+            return msg;
+        }
+
+        internal async Task<HttpResponseMessage> SendAsync(HttpRequestMessage message)
+        {
+            var response = await httpClient.SendAsync(message);
+            response = response.EnsureSuccessStatusCode();
+            updateSessionCookie(response.Headers);
+            return response;
+        }
+
+        /// <summary>
         /// Attempts to establish pfSense login session
         /// </summary>
         public async Task Login()
@@ -215,7 +236,7 @@ namespace PfSenseControl
             var body = await response.Content.ReadAsStringAsync();
             updateSessionCookie(response.Headers);
 
-            return new SystemGateways(body);
+            return new SystemGateways(this, body);
         }
 
         #region IDisposable Support

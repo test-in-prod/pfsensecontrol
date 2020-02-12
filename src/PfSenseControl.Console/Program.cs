@@ -19,6 +19,7 @@ namespace PfSenseControl.Console
             {
                 context.Login().GetAwaiter().GetResult();
                 var gateways = context.GetSystemGateways().GetAwaiter().GetResult();
+                gateways.SaveDefaultGateways(true).GetAwaiter().GetResult();
             }
         }
     }

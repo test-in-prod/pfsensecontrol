@@ -4,12 +4,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace PfSenseControl
 {
     public sealed class SystemGateways
     {
-        readonly List<GatewayTableListItem> gateways = null;
+        List<GatewayTableListItem> gateways = null;
+        readonly PfSenseContext context;
+
+        private string formSaveDefaultGatewaysCsrfToken = null;
+        private string formApplyChangesCsrfToken = null;
 
         /// <summary>
         /// Gets the gateways table
@@ -31,7 +36,13 @@ namespace PfSenseControl
         /// </summary>
         public DefaultGatewayList DefaultGatewayIPv6 { get; private set; }
 
-        internal SystemGateways(string htmlBody)
+        internal SystemGateways(PfSenseContext context, string htmlBody)
+        {
+            this.context = context;
+            parsePageContent(htmlBody);
+        }
+
+        private void parsePageContent(string htmlBody)
         {
             var parser = new HtmlDocument();
             parser.LoadHtml(htmlBody);
@@ -40,6 +51,76 @@ namespace PfSenseControl
 
             DefaultGatewayIPv4 = parseList(parser, "defaultgw4");
             DefaultGatewayIPv6 = parseList(parser, "defaultgw6");
+
+            formSaveDefaultGatewaysCsrfToken = extractDefaultGatewayFormCsrfToken(parser);
+
+            // "changes must be applied" banner that shows if Gateways have been saved
+            formApplyChangesCsrfToken = extractApplyChangesFormCsrfToken(parser);
+        }
+
+        public async Task SaveDefaultGateways(bool applyChanges = false)
+        {
+            var request = context.CreateHttpRequestMessage(HttpMethod.Post, "system_gateways.php");
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                {"__csrf_magic", formSaveDefaultGatewaysCsrfToken },
+                {"defaultgw4", DefaultGatewayIPv4.Selected.InternalName },
+                {"defaultgw6", DefaultGatewayIPv6.Selected.InternalName },
+                {"save", "Save" }
+            });
+            var response = await context.SendAsync(request);
+            parsePageContent(await response.Content.ReadAsStringAsync());
+
+            if (applyChanges)
+            {
+                await ApplyChanges();
+            }
+        }
+
+        public async Task ApplyChanges()
+        {
+            if (formApplyChangesCsrfToken != null)
+            {
+                var request = context.CreateHttpRequestMessage(HttpMethod.Post, "system_gateways.php");
+                request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    {"__csrf_magic", formApplyChangesCsrfToken },
+                    {"apply", "Apply Changes" }
+                });
+                var response = await context.SendAsync(request);
+                parsePageContent(await response.Content.ReadAsStringAsync());
+            } // else do nothing since there's not a token
+        }
+
+        private static string extractApplyChangesFormCsrfToken(HtmlDocument parser)
+        {
+            // form is not easily identifiable, let's find a button that contains "Apply Changes" instead
+            var applyChangesBtn = parser.DocumentNode.SelectSingleNode("//button[@name='apply']");
+            if (applyChangesBtn != null)
+            {
+                var form = applyChangesBtn.ParentNode;
+                var csrfField = form.SelectSingleNode("input[@name='__csrf_magic']");
+                if (csrfField == null)
+                    throw new InvalidOperationException("Apply Changes form found, but csrf hidden field was not, this is a bug");
+                return csrfField.Attributes["value"].Value;
+            }
+            else
+            {
+                // form does not exist, so there's no csrf token to speak of
+                return null;
+            }
+        }
+
+        private static string extractDefaultGatewayFormCsrfToken(HtmlDocument parser)
+        {
+            // form to save default gateways has a csrf token
+            var formSaveDefaultGw = parser.DocumentNode.SelectSingleNode("//form[@action='/system_gateways.php']");
+            if (formSaveDefaultGw == null)
+                throw new InvalidOperationException("Unable to locate form to save default gateway config, this is a bug");
+            var formSaveDefaultGwCsrf = formSaveDefaultGw.SelectSingleNode("input[@name='__csrf_magic']");
+            if (formSaveDefaultGwCsrf == null)
+                throw new InvalidOperationException("Unable to locate csrf magic hidden field in the save default gateway form, this is a bug");
+            return formSaveDefaultGwCsrf.Attributes["value"].Value;
         }
 
         private static List<GatewayTableListItem> parseGatewaysTable(HtmlDocument parser)
