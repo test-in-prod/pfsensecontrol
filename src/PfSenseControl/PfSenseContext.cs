@@ -244,6 +244,12 @@ namespace PfSenseControl
         {
             return new StatusInterfaces(this, await StatusInterfaces.GetStatusInterfacesContent(this));
         }
+
+        public async Task<StatusOpenVPN> GetStatusOpenVPN()
+        {
+            return new StatusOpenVPN(this, await StatusOpenVPN.GetStatusOpenVPNContentAsync(this));
+        }
+
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
