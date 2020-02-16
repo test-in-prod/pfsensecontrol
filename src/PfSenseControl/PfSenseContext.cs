@@ -240,6 +240,10 @@ namespace PfSenseControl
             return new SystemGateways(this, body);
         }
 
+        public async Task<StatusInterfaces> GetStatusInterfacesAsync()
+        {
+            return new StatusInterfaces(this, await StatusInterfaces.GetStatusInterfacesContent(this));
+        }
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
