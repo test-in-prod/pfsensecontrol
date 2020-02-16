@@ -134,10 +134,11 @@ namespace PfSenseControl
             return msg;
         }
 
-        internal async Task<HttpResponseMessage> SendAsync(HttpRequestMessage message)
+        internal async Task<HttpResponseMessage> SendAsync(HttpRequestMessage message, bool suppressEnsureSuccessStatusCode = false)
         {
             var response = await httpClient.SendAsync(message);
-            response = response.EnsureSuccessStatusCode();
+            if (!suppressEnsureSuccessStatusCode)
+                response = response.EnsureSuccessStatusCode();
             updateSessionCookie(response.Headers);
             return response;
         }
