@@ -227,7 +227,7 @@ namespace PfSenseControl
         /// Gets system gateways root configuration
         /// </summary>
         /// <returns></returns>
-        public async Task<SystemGateways> GetSystemGateways()
+        public async Task<SystemGateways> GetSystemGatewaysAsync()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, $"{rootUrl}system_gateways.php");
             setSessionHeaders(request.Headers);
