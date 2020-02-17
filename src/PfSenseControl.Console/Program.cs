@@ -27,6 +27,7 @@ namespace PfSenseControl.Console
 
                 var ovpnStatus = context.GetStatusOpenVPN().GetAwaiter().GetResult();
 
+
             }
         }
     }
